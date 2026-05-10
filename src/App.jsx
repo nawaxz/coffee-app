@@ -37,6 +37,98 @@ const timeOfDay = () => {
   return "evening";
 };
 
+// ─── CUSTOM CURSOR ────────────────────────────────────────────────────────────
+function CustomCursor() {
+  const dotRef = useRef(null);
+  const ringRef = useRef(null);
+  const pos = useRef({ x: 0, y: 0 });
+  const ring = useRef({ x: 0, y: 0 });
+  const clicking = useRef(false);
+  const hovering = useRef(false);
+  const raf = useRef(null);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      pos.current = { x: e.clientX, y: e.clientY };
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+      }
+    };
+    const onDown = () => {
+      clicking.current = true;
+      if (dotRef.current) dotRef.current.style.transform += " scale(0.7)";
+      if (ringRef.current) { ringRef.current.style.width = "20px"; ringRef.current.style.height = "20px"; ringRef.current.style.borderColor = "#c4722a"; }
+    };
+    const onUp = () => {
+      clicking.current = false;
+      if (ringRef.current) { ringRef.current.style.width = ""; ringRef.current.style.height = ""; ringRef.current.style.borderColor = ""; }
+    };
+    const onEnter = (e) => {
+      if (e.target.matches("button, a, input, select, [style*='cursor: pointer'], .card")) {
+        hovering.current = true;
+        if (ringRef.current) { ringRef.current.style.width = "56px"; ringRef.current.style.height = "56px"; ringRef.current.style.borderColor = "#c4722a"; ringRef.current.style.background = "rgba(196,114,42,0.08)"; }
+      }
+    };
+    const onLeave = (e) => {
+      if (e.target.matches("button, a, input, select, [style*='cursor: pointer'], .card")) {
+        hovering.current = false;
+        if (ringRef.current) { ringRef.current.style.width = ""; ringRef.current.style.height = ""; ringRef.current.style.borderColor = ""; ringRef.current.style.background = ""; }
+      }
+    };
+
+    const animate = () => {
+      ring.current.x += (pos.current.x - ring.current.x) * 0.12;
+      ring.current.y += (pos.current.y - ring.current.y) * 0.12;
+      if (ringRef.current) {
+        ringRef.current.style.transform = `translate(${ring.current.x}px, ${ring.current.y}px)`;
+      }
+      raf.current = requestAnimationFrame(animate);
+    };
+    raf.current = requestAnimationFrame(animate);
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("mouseup", onUp);
+    document.addEventListener("mouseover", onEnter);
+    document.addEventListener("mouseout", onLeave);
+    return () => {
+      cancelAnimationFrame(raf.current);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("mouseover", onEnter);
+      document.removeEventListener("mouseout", onLeave);
+    };
+  }, []);
+
+  return (
+    <>
+      {/* Dot */}
+      <div ref={dotRef} style={{
+        position: "fixed", top: 0, left: 0, zIndex: 99999, pointerEvents: "none",
+        width: 8, height: 8, borderRadius: "50%",
+        background: "#c4722a",
+        marginLeft: -4, marginTop: -4,
+        transition: "transform 0.08s ease",
+        mixBlendMode: "difference",
+        willChange: "transform",
+      }} />
+      {/* Ring */}
+      <div ref={ringRef} style={{
+        position: "fixed", top: 0, left: 0, zIndex: 99998, pointerEvents: "none",
+        width: 36, height: 36, borderRadius: "50%",
+        border: "1.5px solid rgba(196,114,42,0.7)",
+        background: "rgba(196,114,42,0.04)",
+        marginLeft: -18, marginTop: -18,
+        transition: "width 0.3s ease, height 0.3s ease, border-color 0.3s ease, background 0.3s ease",
+        willChange: "transform",
+        backdropFilter: "blur(1px)",
+        boxShadow: "0 0 12px rgba(196,114,42,0.25), inset 0 0 8px rgba(196,114,42,0.05)",
+      }} />
+    </>
+  );
+}
+
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState("home");
@@ -99,7 +191,7 @@ export default function App() {
     <div style={{ fontFamily: "'Playfair Display', Georgia, serif", minHeight: "100vh", background: "#0f0a06", color: "#f5ede0" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0f0a06; }
         ::-webkit-scrollbar-thumb { background: #7c4a1e; border-radius: 3px; }
@@ -177,6 +269,7 @@ export default function App() {
         }
       `}</style>
 
+      <CustomCursor />
       <div className="grain" />
 
       {/* TOP NAV */}
